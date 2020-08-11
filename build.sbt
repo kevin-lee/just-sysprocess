@@ -52,6 +52,16 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       libraryDependencies ++= hedgehogLibs,
+      scalacOptions := (SemVer.parseUnsafe(scalaVersion.value) match {
+        case SemVer(SemVer.Major(2), SemVer.Minor(13), SemVer.Patch(patch), _, _) =>
+          val options = scalacOptions.value
+          if (patch >= 3)
+            options.filterNot(_ == "-Xlint:nullary-override")
+          else
+            options
+        case _: SemVer =>
+          scalacOptions.value
+      }),
       /* WartRemover and scalacOptions { */
 //      wartremoverErrors in (Compile, compile) ++= commonWarts((scalaBinaryVersion in update).value),
 //      wartremoverErrors in (Test, compile) ++= commonWarts((scalaBinaryVersion in update).value),
