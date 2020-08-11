@@ -3,13 +3,11 @@ import kevinlee.sbt.SbtCommon.crossVersionProps
 import just.semver.SemVer
 import SemVer.{Major, Minor}
 
-val ProjectScalaVersion: String = "2.13.2"
-val CrossScalaVersions: Seq[String] = Seq("2.11.12", "2.12.11", ProjectScalaVersion)
+val ProjectScalaVersion: String = "2.13.3"
+val CrossScalaVersions: Seq[String] = Seq("2.11.12", "2.12.12", ProjectScalaVersion)
 val IncludeTest: String = "compile->compile;test->test"
 
-lazy val hedgehogVersion = "97854199ef795a5dfba15478fd9abe66035ddea2"
-lazy val hedgehogRepo: MavenRepository =
-  "bintray-scala-hedgehog" at "https://dl.bintray.com/hedgehogqa/scala-hedgehog"
+lazy val hedgehogVersion = "0.4.2"
 
 lazy val hedgehogLibs: Seq[ModuleID] = Seq(
     "qa.hedgehog" %% "hedgehog-core" % hedgehogVersion % Test
@@ -53,9 +51,6 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       name := prefixedProjectName(projectName.projectName),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
-      resolvers ++= Seq(
-          hedgehogRepo
-        ),
       libraryDependencies ++= hedgehogLibs,
       /* WartRemover and scalacOptions { */
 //      wartremoverErrors in (Compile, compile) ++= commonWarts((scalaBinaryVersion in update).value),
@@ -82,27 +77,23 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       /* Ammonite-REPL { */
       libraryDependencies ++=
         (scalaBinaryVersion.value match {
-          case "2.10" =>
-            Seq.empty[ModuleID]
+          case "2.12" | "2.13" =>
+            Seq("com.lihaoyi" % "ammonite" % "2.2.0" % Test cross CrossVersion.full)
           case "2.11" =>
             Seq("com.lihaoyi" % "ammonite" % "1.6.7" % Test cross CrossVersion.full)
-          case "2.12" =>
-            Seq.empty[ModuleID] // TODO: add ammonite when it supports Scala 2.12.11
           case _ =>
-            Seq("com.lihaoyi" % "ammonite" % "2.1.4" % Test cross CrossVersion.full)
+            Seq.empty[ModuleID]
         }),
       sourceGenerators in Test +=
         (scalaBinaryVersion.value match {
-          case "2.10" =>
-            task(Seq.empty[File])
-          case "2.12" =>
-            task(Seq.empty[File]) // TODO: add ammonite when it supports Scala 2.12.11
-          case _ =>
+          case "2.11" | "2.12" | "2.13" =>
             task {
               val file = (sourceManaged in Test).value / "amm.scala"
               IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
               Seq(file)
             }
+          case _ =>
+            task(Seq.empty[File])
         }),
       /* } Ammonite-REPL */
       /* Bintray { */
