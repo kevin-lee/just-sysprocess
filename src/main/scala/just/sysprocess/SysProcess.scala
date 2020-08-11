@@ -48,8 +48,8 @@ final class ResultCollector private (
   private val errs: ListBuffer[String]
 ) extends ProcessLogger {
 
-  def outputs: List[String] = outs.result
-  def errors: List[String] = errs.result
+  def outputs: List[String] = outs.result()
+  def errors: List[String] = errs.result()
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   override def out(s: => String): Unit = {
