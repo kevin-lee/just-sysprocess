@@ -2,7 +2,7 @@
 
 Just SysProcess
 
-[![Build Status](https://github.com/Kevin-Lee/just-sysprocess/workflows/Build%20All/badge.svg)](https://github.com/Kevin-Lee/just-sysprocess/actions?workflow=Build+All)
+[![Build Status](https://github.com/Kevin-Lee/just-sysprocess/workflows/Build-All/badge.svg)](https://github.com/Kevin-Lee/just-sysprocess/actions?workflow=Build-All)
 [![Release Status](https://github.com/Kevin-Lee/just-sysprocess/workflows/Release/badge.svg)](https://github.com/Kevin-Lee/just-sysprocess/actions?workflow=Release)
 
 [![Latest version](https://index.scala-lang.org/kevin-lee/just-sysprocess/latest.svg)](https://index.scala-lang.org/kevin-lee/just-sysprocess)

@@ -3,8 +3,17 @@ import kevinlee.sbt.SbtCommon.crossVersionProps
 import just.semver.SemVer
 import SemVer.{Major, Minor}
 
-val ProjectScalaVersion: String = "2.13.3"
-val CrossScalaVersions: Seq[String] = Seq("2.11.12", "2.12.12", ProjectScalaVersion)
+val DottyVersion = "0.26.0-RC1"
+val ProjectScalaVersion = DottyVersion
+
+val removeDottyIncompatible: ModuleID => Boolean =
+  m =>
+    m.name == "wartremover" ||
+      m.name == "ammonite" ||
+      m.name == "kind-projector" ||
+      m.name == "mdoc"
+
+val CrossScalaVersions: Seq[String] = Seq("2.11.12", "2.12.12", "2.13.3", ProjectScalaVersion).distinct
 val IncludeTest: String = "compile->compile;test->test"
 
 lazy val hedgehogVersion = "0.4.2"
@@ -60,6 +69,15 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
           else
             options
         case _: SemVer =>
+          scalacOptions.value
+      }),
+      scalacOptions := (isDotty.value match {
+        case true =>
+          Seq(
+            "-source:3.0-migration", 
+            "-language:dynamics,existentials,higherKinds,reflectiveCalls,experimental.macros,implicitConversions", "-Ykind-projector"
+          )
+        case false =>
           scalacOptions.value
       }),
       /* WartRemover and scalacOptions { */
@@ -129,15 +147,23 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
         Seq.empty
     },
     libraryDependencies :=
-    crossVersionProps(
-        List.empty
-      , SemVer.parseUnsafe(scalaVersion.value)
-    ) {
-        case (Major(2), Minor(10)) =>
-          libraryDependencies.value.filterNot(m => m.organization == "org.wartremover" && m.name == "wartremover")
-        case x =>
-          libraryDependencies.value
-      },
+      crossVersionProps(
+          List.empty
+        , SemVer.parseUnsafe(scalaVersion.value)
+      ) {
+          case (Major(2), Minor(10)) =>
+            libraryDependencies.value.filterNot(m => m.organization == "org.wartremover" && m.name == "wartremover")
+          case x =>
+            libraryDependencies.value
+        },
+    libraryDependencies := (
+      if (isDotty.value) {
+        libraryDependencies.value
+          .filterNot(removeDottyIncompatible)
+      } else
+        (libraryDependencies).value
+    ),
+    libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value)),
     initialCommands in console :=
       """import just.sysprocess._"""
 
