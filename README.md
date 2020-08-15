@@ -13,23 +13,66 @@ Just SysProcess
 > **NOTE: `just-sysprocess` has not been released yet.**
 
 ```scala
-libraryDependencies += "io.kevinlee" %% "just-sysprocess" % "0.1.0"
+libraryDependencies += "io.kevinlee" %% "just-sysprocess" % "0.2.0"
 ```
 
+## Example
+
+### Scala 2.11 ~ 2.13
+Run on Scastie: https://scastie.scala-lang.org/JvBBO4WgR3y8WN5Cd1EXMQ
 ```scala
 import just.sysprocess._
 
 val sysProcess = SysProcess.singleSysProcess(None, "ls")
 
-SysProcess.run(sysProcess)
-  .toEither {
+val result: Either[String, List[String]] = ProcessResult.toEither(
+  SysProcess.run(sysProcess)
+) {
+    case ProcessResult.Success(result) =>
+      Right(result)
+
+    case ProcessResult.Failure(code, error) =>
+      Left(s"Failed: code: $code, ${error.mkString("\n")}")
+
+    case ProcessResult.FailureWithNonFatal(nonFatalThrowable) =>
+      Left(nonFatalThrowable.getMessage)
+}
+result match {
+  case Right(files) =>
+    println(files.mkString("Files: \n  -", "\n  -", "\n"))
+
+  case Left(error) =>
+    println(s"ERROR: ${error.toString}")
+}
+```
+
+### Scala 3 (Dotty) 
+Run on Scastie: https://scastie.scala-lang.org/4Nh0xTT5THKpz91F3dcy2w
+
+```scala
+import just.sysprocess._
+
+@main def main: Unit = {
+  val sysProcess = SysProcess.singleSysProcess(None, "ls")
+
+  val result: Either[String, List[String]] = ProcessResult.toEither(
+    SysProcess.run(sysProcess)
+  ) {
       case ProcessResult.Success(result) =>
-        println(s"Success: ${result.mkString("\n")}")
-      
+        Right(result)
+
       case ProcessResult.Failure(code, error) =>
-        println(s"Failed: code: $code, ${error.mkString("\n")}")
-    
+        Left(s"Failed: code: $code, ${error.mkString("\n")}")
+
       case ProcessResult.FailureWithNonFatal(nonFatalThrowable) =>
-        println(nonFatalThrowable.getMessage)
-    }
+        Left(nonFatalThrowable.getMessage)
+  }
+  result match {
+    case Right(files) =>
+      println(files.mkString("Files: \n  -", "\n  -", "\n"))
+    
+    case Left(error) =>
+      println(s"ERROR: ${error.toString}")
+  }
+}
 ```
