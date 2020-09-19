@@ -1,18 +1,15 @@
-name: Build-All
+name: Release
 
 on:
   push:
-    branches-ignore:
-      - 'release-now/**'
-
-  pull_request:
     branches:
-      - main
-
+      - 'release-now/v**'
 
 jobs:
 
-  build:
+  publish:
+    needs: build
+
     runs-on: ubuntu-latest
 
     strategy:
@@ -46,10 +43,33 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ivy-scala-${{ matrix.scala.binary-version }}-
 
-
-      - name: "[Push] Build All for ${{ matrix.scala.name }} ${{ matrix.scala.version }} - ${{ github.run_number }}"
-        if: github.event_name == 'push'
+      - name: "sbt publish for ${{ matrix.scala.name }} ${{ matrix.scala.version }} - ${{ github.run_number }}"
         env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_PASS: ${{ secrets.BINTRAY_PASS }}
+        run: |
+          echo "Run] sbt publish for Scala ${{ matrix.scala.version }}"
+          echo 'sbt -J-Xmx2048m ++${{ matrix.scala.version }}! -v clean publish'
+          sbt -J-Xmx2048m \
+            ++${{ matrix.scala.version }}! \
+            -v \
+            clean \
+            test \
+            publish
+
+  publish_maven:
+    needs: publish
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Sync to Maven Central
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_PASS: ${{ secrets.BINTRAY_PASS }}
+
           CURRENT_BRANCH_NAME: ${{ github.ref }}
           RUN_ID: ${{ github.run_id }}
           RUN_NUMBER: ${{ github.run_number }}
@@ -60,20 +80,6 @@ jobs:
           echo "RUN_ID=${RUN_ID}"
           echo "RUN_NUMBER=${RUN_NUMBER}"
           echo "Push #${PUSH_NUMBER}"
-          java -version
-          .github/workflows/sbt-build-all.sh ${{ matrix.scala.version }}
 
-      - name: "[PR] Build All for ${{ matrix.scala.name }} ${{ matrix.scala.version }} - PR-#${{ github.event.pull_request.number }} - ${{ github.run_number }}"
-        if: github.event_name == 'pull_request'
-        env:
-          CURRENT_BRANCH_NAME: ${{ github.base_ref }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_NUMBER: ${{ github.run_number }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          echo "Rull request to the '${CURRENT_BRANCH_NAME}' branch"
-          echo "RUN_ID=${RUN_ID}"
-          echo "RUN_NUMBER=${RUN_NUMBER}"
-          echo "PR #${PR_NUMBER}"
-          java -version
-          .github/workflows/sbt-build-all.sh ${{ matrix.scala.version }}
+          export GITHUB_TAG=${CURRENT_BRANCH_NAME#release-now/}
+          .github/workflows/maven_central_sync.sh

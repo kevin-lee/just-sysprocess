@@ -3,7 +3,7 @@ import kevinlee.sbt.SbtCommon.crossVersionProps
 import just.semver.SemVer
 import SemVer.{Major, Minor}
 
-val DottyVersion = "0.26.0-RC1"
+val DottyVersion = "0.27.0-RC1"
 val ProjectScalaVersion = DottyVersion
 
 val removeDottyIncompatible: ModuleID => Boolean =
@@ -13,10 +13,10 @@ val removeDottyIncompatible: ModuleID => Boolean =
       m.name == "kind-projector" ||
       m.name == "mdoc"
 
-val CrossScalaVersions: Seq[String] = Seq("2.11.12", "2.12.12", "2.13.3", ProjectScalaVersion).distinct
+val CrossScalaVersions: Seq[String] = Seq("2.11.12", "2.12.12", "2.13.3", "0.26.0", ProjectScalaVersion).distinct
 val IncludeTest: String = "compile->compile;test->test"
 
-lazy val hedgehogVersion = "0.4.2"
+lazy val hedgehogVersion = "0.5.1"
 
 lazy val hedgehogLibs: Seq[ModuleID] = Seq(
     "qa.hedgehog" %% "hedgehog-core" % hedgehogVersion % Test
