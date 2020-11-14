@@ -14,7 +14,7 @@ val removeDottyIncompatible: ModuleID => Boolean =
       m.name == "mdoc"
 
 val CrossScalaVersions: Seq[String] = Seq(
-  "2.11.12", "2.12.12", "2.13.3", "0.26.0", "0.27.0", ProjectScalaVersion
+  "2.11.12", "2.12.12", "2.13.3", ProjectScalaVersion
 ).distinct
 val IncludeTest: String = "compile->compile;test->test"
 
