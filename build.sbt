@@ -3,7 +3,7 @@ import kevinlee.sbt.SbtCommon.crossVersionProps
 import just.semver.SemVer
 import SemVer.{Major, Minor}
 
-val DottyVersion = "3.0.0-M1"
+val DottyVersion = "3.0.0-M2"
 val ProjectScalaVersion = DottyVersion
 
 val removeDottyIncompatible: ModuleID => Boolean =
@@ -14,7 +14,7 @@ val removeDottyIncompatible: ModuleID => Boolean =
       m.name == "mdoc"
 
 val CrossScalaVersions: Seq[String] = Seq(
-  "2.11.12", "2.12.12", "2.13.3", ProjectScalaVersion
+  "2.11.12", "2.12.12", "2.13.3", "3.0.0-M1", ProjectScalaVersion
 ).distinct
 val IncludeTest: String = "compile->compile;test->test"
 
