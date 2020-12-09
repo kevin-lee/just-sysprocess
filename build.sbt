@@ -14,7 +14,7 @@ val removeDottyIncompatible: ModuleID => Boolean =
       m.name == "mdoc"
 
 val CrossScalaVersions: Seq[String] = Seq(
-  "2.11.12", "2.12.12", "2.13.3", "3.0.0-M1", ProjectScalaVersion
+  "2.11.12", "2.12.12", "2.13.4", "3.0.0-M1", ProjectScalaVersion
 ).distinct
 val IncludeTest: String = "compile->compile;test->test"
 
@@ -60,7 +60,7 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
   Project(id, file)
     .settings(
       name := prefixedProjectName(projectName.projectName),
-      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full),
+      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.2" cross CrossVersion.full),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       libraryDependencies ++= hedgehogLibs,
       scalacOptions := (SemVer.parseUnsafe(scalaVersion.value) match {
@@ -107,7 +107,9 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       /* Ammonite-REPL { */
       libraryDependencies ++=
         (scalaBinaryVersion.value match {
-          case "2.12" | "2.13" =>
+          case "2.13" =>
+            Seq.empty[ModuleID]
+          case "2.12" =>
             Seq("com.lihaoyi" % "ammonite" % "2.2.0" % Test cross CrossVersion.full)
           case "2.11" =>
             Seq("com.lihaoyi" % "ammonite" % "1.6.7" % Test cross CrossVersion.full)
@@ -116,7 +118,9 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
         }),
       sourceGenerators in Test +=
         (scalaBinaryVersion.value match {
-          case "2.11" | "2.12" | "2.13" =>
+          case "2.13" =>
+            task(Seq.empty[File])
+          case "2.11" | "2.12" =>
             task {
               val file = (sourceManaged in Test).value / "amm.scala"
               IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
