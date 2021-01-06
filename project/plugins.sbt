@@ -8,4 +8,4 @@ addSbtPlugin("io.kevinlee" % "sbt-devoops" % "1.0.3")
 
 addSbtPlugin("io.kevinlee" % "sbt-docusaur" % "0.3.0")
 
-addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.4.6")
+addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.5.1")
