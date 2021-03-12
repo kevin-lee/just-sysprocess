@@ -2,10 +2,10 @@
 
 if [ "${GITHUB_TAG:-}" != "" ]; then
 
+  : ${PROJECT_VERSION:?"PROJECT_VERSION is missing."}
   : ${BINTRAY_USER:?"BINTRAY_USER is missing."}
   : ${BINTRAY_PASS:?"BINTRAY_PASS is missing."}
 
-  PROJECT_VERSION="${GITHUB_TAG#v}"
   BINTRAY_SUBJECT=${BINTRAY_SUBJECT:-kevinlee}
   BINTRAY_REPO=${BINTRAY_REPO:-maven}
 

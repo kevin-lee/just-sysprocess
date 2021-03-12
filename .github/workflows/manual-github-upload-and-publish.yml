@@ -1,13 +1,15 @@
-name: Release
+name: "[Manual] GitHub Upload, Publish and Maven Central"
 
 on:
-  push:
-    branches:
-      - 'release-now/v**'
+  workflow_dispatch:
+    inputs:
+      project-version:
+        description: 'Project Version to sync to Maven Central (e.g v1.2.3)'
+        required: true
 
 jobs:
 
-  publish:
+  github-release-artifacts-and-publish:
 
     runs-on: ubuntu-latest
 
@@ -53,10 +55,12 @@ jobs:
             -v \
             clean \
             test \
+            packagedArtifacts \
+            devOopsGitHubReleaseUploadArtifacts \
             publish
 
   publish_maven:
-    needs: publish
+    needs: github-release-artifacts-and-publish
 
     runs-on: ubuntu-latest
 
@@ -72,6 +76,8 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           RUN_NUMBER: ${{ github.run_number }}
         run: |
+          PROJECT_VERSION="${{ github.event.inputs.project-version }}"
+          export PROJECT_VERSION="${PROJECT_VERSION#v}"
           echo "[BEFORE]CURRENT_BRANCH_NAME=${CURRENT_BRANCH_NAME}"
           export CURRENT_BRANCH_NAME="${CURRENT_BRANCH_NAME#refs/heads/}"
           echo " [AFTER]CURRENT_BRANCH_NAME=${CURRENT_BRANCH_NAME}"
@@ -79,5 +85,4 @@ jobs:
           echo "RUN_NUMBER=${RUN_NUMBER}"
           echo "Push #${PUSH_NUMBER}"
 
-          export GITHUB_TAG=${CURRENT_BRANCH_NAME#release-now/}
           .github/workflows/maven_central_sync.sh

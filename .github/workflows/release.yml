@@ -6,7 +6,7 @@ on:
       - '*'
 
 jobs:
-  build:
+  github-release:
 
     runs-on: ubuntu-latest
     steps:
@@ -15,6 +15,17 @@ jobs:
       with:
         java-version: "11"
 
+    - name: Cache SBT
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.ivy2/cache
+          ~/.cache/coursier
+          ~/.sbt
+        key: ${{ runner.os }}-sbt-${{ matrix.scala.binary-version }}-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('**/build.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-sbt-${{ matrix.scala.binary-version }}-
+
     - name: sbt GitHub Release
       env:
         GITHUB_TOKEN: ${{ secrets.RELEASE_AUTH_TOKEN_GITHUB }}
@@ -22,18 +33,14 @@ jobs:
         echo "Run] sbt GitHub release"
         export SOURCE_DATE_EPOCH=$(date +%s)
         echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
-        echo 'sbt -J-Xmx2048m clean +test +packagedArtifacts'
-        sbt -J-Xmx2048m \
-          clean \
-          +test \
-          +packagedArtifacts
         echo "====================="
-        echo 'sbt -J-Xmx2048m "; gitHubRelease"'
-        sbt -J-Xmx2048m \
-          gitHubRelease
+        echo 'sbt -J-Xmx2048m devOopsGitHubRelease'
+        sbt \
+          -J-Xmx2048m \
+          devOopsGitHubRelease
 
-  publish:
-    needs: build
+  github-release-artifacts-and-publish:
+    needs: github-release
 
     runs-on: ubuntu-latest
 
@@ -67,21 +74,25 @@ jobs:
 
       - name: "sbt publish for ${{ matrix.scala.name }} ${{ matrix.scala.version }} - ${{ github.run_number }}"
         env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_AUTH_TOKEN_GITHUB }}
           BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
           BINTRAY_PASS: ${{ secrets.BINTRAY_PASS }}
         run: |
           echo "Run] sbt publish for Scala ${{ matrix.scala.version }}"
           export SOURCE_DATE_EPOCH=$(date +%s)
           echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH"
-          echo 'sbt -J-Xmx2048m ++${{ matrix.scala.version }}! -v clean publish'
+          echo 'sbt -J-Xmx2048m ++${{ matrix.scala.version }}! -v clean test packagedArtifacts devOopsGitHubReleaseUploadArtifacts publish'
           sbt -J-Xmx2048m \
             ++${{ matrix.scala.version }}! \
             -v \
             clean \
+            test \
+            packagedArtifacts \
+            devOopsGitHubReleaseUploadArtifacts \
             publish
 
   publish_maven:
-    needs: publish
+    needs: github-release-artifacts-and-publish
     if: startsWith(github.ref, 'refs/tags/v')
 
     runs-on: ubuntu-latest
@@ -95,4 +106,5 @@ jobs:
           BINTRAY_PASS: ${{ secrets.BINTRAY_PASS }}
         run: |
           export GITHUB_TAG=${GITHUB_REF#refs/tags/}
+          export PROJECT_VERSION="${GITHUB_TAG#v}"
           .github/workflows/maven_central_sync.sh
