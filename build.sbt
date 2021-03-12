@@ -3,7 +3,7 @@ import kevinlee.sbt.SbtCommon.crossVersionProps
 import just.semver.SemVer
 import SemVer.{Major, Minor}
 
-val DottyVersion = "3.0.0-M3"
+val DottyVersion = "3.0.0-RC1"
 val ProjectScalaVersion = DottyVersion
 
 val removeDottyIncompatible: ModuleID => Boolean =
@@ -11,11 +11,22 @@ val removeDottyIncompatible: ModuleID => Boolean =
     m.name == "wartremover" ||
       m.name == "ammonite" ||
       m.name == "kind-projector" ||
+      m.name == "better-monadic-for" ||
       m.name == "mdoc"
 
 val CrossScalaVersions: Seq[String] = Seq(
-  "2.11.12", "2.12.12", "2.13.4", "3.0.0-M1", "3.0.0-M2", ProjectScalaVersion
+  "2.11.12", "2.12.12", "2.13.4", "3.0.0-M1", "3.0.0-M2", "3.0.0-M3", ProjectScalaVersion
 ).distinct
+
+lazy val scala3cLanguageOptions = "-language:" + List(
+  "dynamics",
+  "existentials",
+  "higherKinds",
+  "reflectiveCalls",
+  "experimental.macros",
+  "implicitConversions"
+).mkString(",")
+
 val IncludeTest: String = "compile->compile;test->test"
 
 lazy val hedgehogVersion = "0.5.1"
@@ -60,10 +71,19 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
   Project(id, file)
     .settings(
       name := prefixedProjectName(projectName.projectName),
-      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.2" cross CrossVersion.full),
+      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
+      useAggressiveScalacOptions := true,
       libraryDependencies ++= hedgehogLibs,
       scalacOptions := (SemVer.parseUnsafe(scalaVersion.value) match {
+        case SemVer(SemVer.Major(2), SemVer.Minor(11), _, _, _) =>
+          val options = scalacOptions.value
+          options.filterNot { op =>
+            op == "-Ywarn-extra-implicit" || op == "-Ywarn-unused:implicits" || 
+              op == "-Ywarn-unused:imports" || op == "-Ywarn-unused:locals" ||
+              op == "-Ywarn-unused:params" || op == "-Ywarn-unused:patvars" || 
+              op == "-Ywarn-unused:privates"
+          } ++ Seq("-Ywarn-unused")
         case SemVer(SemVer.Major(2), SemVer.Minor(13), SemVer.Patch(patch), _, _) =>
           val options = scalacOptions.value
           if (patch >= 3)
@@ -76,12 +96,34 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       scalacOptions := (isDotty.value match {
         case true =>
           Seq(
-            "-source:3.0-migration", 
-            "-language:dynamics,existentials,higherKinds,reflectiveCalls,experimental.macros,implicitConversions", "-Ykind-projector"
+            "-source:3.0-migration",
+            scala3cLanguageOptions,
+            "-Ykind-projector"
           )
         case false =>
           scalacOptions.value
       }),
+      Compile / doc / scalacOptions := ((Compile / doc / scalacOptions).value.filterNot(
+        if (isDotty.value) {
+          Set(
+            "-source:3.0-migration",
+            "-scalajs",
+            "-deprecation",
+            "-explain-types",
+            "-explain",
+            "-feature",
+            scala3cLanguageOptions,
+            "-unchecked",
+            "-Xfatal-warnings",
+            "-Ykind-projector",
+            "-from-tasty",
+            "-encoding",
+            "utf8",
+          )
+        } else {
+          Set.empty[String]
+        }
+      )),
       /* WartRemover and scalacOptions { */
 //      wartremoverErrors in (Compile, compile) ++= commonWarts((scalaBinaryVersion in update).value),
 //      wartremoverErrors in (Test, compile) ++= commonWarts((scalaBinaryVersion in update).value),
@@ -139,12 +181,9 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
     )
 
 lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""), file("."))
-  .enablePlugins(DevOopsGitReleasePlugin)
+  .enablePlugins(DevOopsGitHubReleasePlugin)
   .settings(
     description := "Sys Process Util",
-  /* GitHub Release { */
-    gitTagFrom := "main",
-  /* } GitHub Release */
     unmanagedSourceDirectories in Compile ++= {
       val sharedSourceDir = baseDirectory.value / "src/main"
       if (scalaVersion.value.startsWith("2.13") || scalaVersion.value.startsWith("2.12"))
@@ -157,7 +196,7 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
           List.empty
         , SemVer.parseUnsafe(scalaVersion.value)
       ) {
-          case (Major(2), Minor(10)) =>
+          case (Major(2), Minor(10), _) =>
             libraryDependencies.value.filterNot(m => m.organization == "org.wartremover" && m.name == "wartremover")
           case x =>
             libraryDependencies.value
