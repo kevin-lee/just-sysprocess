@@ -1,15 +1,13 @@
 package just.sysprocess
 
-import java.io.{File, IOException}
-
 import hedgehog._
 import hedgehog.runner._
 
+import java.io.{File, IOException}
 
-/**
- * @author Kevin Lee
- * @since 2020-07-01
- */
+/** @author Kevin Lee
+  * @since 2020-07-01
+  */
 object SysProcessSpec extends Properties {
 
   override def tests: List[Test] = List(
@@ -23,7 +21,7 @@ object SysProcessSpec extends Properties {
   def testSysProcessRunSuccessCase: Result = {
 
     val expected = ProcessResult.success(List("test1.txt", "test2.txt", "test3.txt"))
-    val actual = SysProcess.run(
+    val actual   = SysProcess.run(
       SysProcess.singleSysProcess(Option(new File(resourcesPath)), "ls")
     )
 
@@ -33,18 +31,22 @@ object SysProcessSpec extends Properties {
   def testSysProcessRunFailureCase: Result = {
 
     val expectedMessageContent = List("ls", "test4.txt", "No such file or directory")
+
     val actual = SysProcess.run(
       SysProcess.singleSysProcess(Option(new File(resourcesPath)), "ls", "-l", "test4.txt")
     )
 
     actual match {
       case ProcessResult.Failure(code, errors) =>
-        Result.all(List(
-          Result.assert(code > 0).log("expect non-zero code"),
-          Result.assert(expectedMessageContent.forall(errors.mkString.contains))
-            .log(s"It should contain all of ${expectedMessageContent.mkString("[", ",", "]")}")
-        ))
-      case _ =>
+        Result.all(
+          List(
+            Result.assert(code > 0).log("expect non-zero code"),
+            Result
+              .assert(expectedMessageContent.forall(errors.mkString.contains))
+              .log(s"It should contain all of ${expectedMessageContent.mkString("[", ",", "]")}")
+          )
+        )
+      case _                                   =>
         Result.failure
     }
   }
