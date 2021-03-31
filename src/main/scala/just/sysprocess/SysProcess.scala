@@ -1,18 +1,15 @@
 package just.sysprocess
 
 import java.io.File
-
-import scala.util.control.NonFatal
-
 import scala.collection.mutable.ListBuffer
 import scala.sys.process.ProcessLogger
+import scala.util.control.NonFatal
 
-/**
- * Copied from sbt-devoops and modified.
- *
- * @author Kevin Lee
- * @since 2019-01-01
- */
+/** Copied from sbt-devoops and modified.
+  *
+  * @author Kevin Lee
+  * @since 2019-01-01
+  */
 sealed trait SysProcess
 
 object SysProcess {
@@ -26,20 +23,22 @@ object SysProcess {
   def singleSysProcess(baseDir: Option[File], command: String, commands: String*): SysProcess =
     SingleSysProcess(baseDir, command, commands.toList)
 
-  def run(sysProcess: SysProcess): ProcessResult = try (sysProcess match {
-    case SingleSysProcess(baseDir, command, commands) =>
-      val resultCollector = ResultCollector()
-      val processBuilder = baseDir.fold(
-          sys.process.Process(command :: commands)
-        )(
-          dir => sys.process.Process(command :: commands, cwd = dir)
-        )
-      val code = processBuilder ! resultCollector
-      ProcessResult.processResult(code, resultCollector)
-  }) catch {
-    case NonFatal(nonFatalThrowable) =>
-      ProcessResult.failureWithNonFatal(nonFatalThrowable)
-  }
+  def run(sysProcess: SysProcess): ProcessResult =
+    try (sysProcess match {
+      case SingleSysProcess(baseDir, command, commands) =>
+        val resultCollector = ResultCollector()
+        val processBuilder  =
+          baseDir.fold(
+            sys.process.Process(command :: commands)
+          )(dir => sys.process.Process(command :: commands, cwd = dir))
+
+        val code = processBuilder ! resultCollector
+        ProcessResult.processResult(code, resultCollector)
+    })
+    catch {
+      case NonFatal(nonFatalThrowable) =>
+        ProcessResult.failureWithNonFatal(nonFatalThrowable)
+    }
 
 }
 
@@ -49,7 +48,7 @@ final class ResultCollector private (
 ) extends ProcessLogger {
 
   def outputs: List[String] = outs.result()
-  def errors: List[String] = errs.result()
+  def errors: List[String]  = errs.result()
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   override def out(s: => String): Unit = {
@@ -96,14 +95,13 @@ object ProcessResult {
   def failureWithNonFatal(throwable: Throwable): ProcessResult =
     FailureWithNonFatal(throwable)
 
-
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def processResult(code: Int, resultCollector: ResultCollector): ProcessResult =
     if (code == 0) {
       /* Why concatenate outputs and errors in success?
        * Sometimes 'errors' has some part of success result. :(
        */
-      success(resultCollector.outputs ++ resultCollector.errors )
+      success(resultCollector.outputs ++ resultCollector.errors)
     } else {
       failure(code, resultCollector.errors)
     }
