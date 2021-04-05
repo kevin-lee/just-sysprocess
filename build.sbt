@@ -52,7 +52,7 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
                               libraryDependencies.value
                             }),
     libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value)),
-    initialCommands in console :=
+    console / initialCommands :=
       """import just.sysprocess._""",
   )
 
@@ -74,9 +74,6 @@ lazy val props =
         "2.11.12",
         "2.12.13",
         "2.13.5",
-        "3.0.0-M1",
-        "3.0.0-M2",
-        "3.0.0-M3",
         "3.0.0-RC1",
         ProjectScalaVersion,
       ).distinct
@@ -157,9 +154,9 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
           }
         )),
       /* WartRemover and scalacOptions { */
-//      wartremoverErrors in (Compile, compile) ++= commonWarts((scalaBinaryVersion in update).value),
-//      wartremoverErrors in (Test, compile) ++= commonWarts((scalaBinaryVersion in update).value),
-      wartremoverErrors ++= commonWarts((scalaBinaryVersion in update).value),
+//      (Compile, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
+//      (Test, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
+      wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
 //      wartremoverErrors ++= Warts.all,
       Compile / console / wartremoverErrors := List.empty,
       Compile / console / wartremoverWarnings := List.empty,
@@ -187,13 +184,13 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
           case _      =>
             Seq.empty[ModuleID]
         }),
-      sourceGenerators in Test +=
+      Test / sourceGenerators +=
         (scalaBinaryVersion.value match {
           case "2.13"          =>
             task(Seq.empty[File])
           case "2.11" | "2.12" =>
             task {
-              val file = (sourceManaged in Test).value / "amm.scala"
+              val file = (Test / sourceManaged).value / "amm.scala"
               IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
               Seq(file)
             }
