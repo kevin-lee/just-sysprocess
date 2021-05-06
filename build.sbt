@@ -44,21 +44,20 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
         case x                        =>
           libraryDependencies.value
       },
-    libraryDependencies := (if (isDotty.value) {
+    libraryDependencies := (if (scalaVersion.value.startsWith("3.0")) {
                               libraryDependencies
                                 .value
                                 .filterNot(props.removeDottyIncompatible)
                             } else {
                               libraryDependencies.value
                             }),
-    libraryDependencies := libraryDependencies.value.map(_.withDottyCompat(scalaVersion.value)),
     console / initialCommands :=
       """import just.sysprocess._""",
   )
 
 lazy val props =
   new {
-    val DottyVersion        = "3.0.0-RC2"
+    val DottyVersion        = "3.0.0-RC3"
     val ProjectScalaVersion = DottyVersion
 
     val removeDottyIncompatible: ModuleID => Boolean =
@@ -75,6 +74,7 @@ lazy val props =
         "2.12.13",
         "2.13.5",
         "3.0.0-RC1",
+        "3.0.0-RC2",
         ProjectScalaVersion,
       ).distinct
 
@@ -90,7 +90,8 @@ lazy val props =
 
     val IncludeTest: String = "compile->compile;test->test"
 
-    val hedgehogVersion = "0.6.5"
+    val hedgehogVersion       = "0.6.6"
+    val hedgehogLatestVersion = "0.6.7"
 
     val GitHubUsername = "Kevin-Lee"
     val TheProjectName = "just-sysprocess"
@@ -99,11 +100,19 @@ lazy val props =
 lazy val libs =
   new {
 
-    lazy val hedgehog: Seq[ModuleID] = Seq(
-      "qa.hedgehog" %% "hedgehog-core"   % props.hedgehogVersion % Test,
-      "qa.hedgehog" %% "hedgehog-runner" % props.hedgehogVersion % Test,
-      "qa.hedgehog" %% "hedgehog-sbt"    % props.hedgehogVersion % Test,
-    )
+    def hedgehog(scalaVersion: String): List[ModuleID] = {
+      val hedgehogV =
+        if (scalaVersion == "3.0.0-RC1")
+          props.hedgehogVersion
+        else
+          props.hedgehogLatestVersion
+
+      List(
+        "qa.hedgehog" %% "hedgehog-core"   % hedgehogV % Test,
+        "qa.hedgehog" %% "hedgehog-runner" % hedgehogV % Test,
+        "qa.hedgehog" %% "hedgehog-sbt"    % hedgehogV % Test,
+      )
+    }
 
   }
 
@@ -116,24 +125,21 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
   Project(id, file)
     .settings(
       name := prefixedProjectName(projectName.projectName),
-      addCompilerPlugin("org.typelevel" % "kind-projector"     % "0.11.3" cross CrossVersion.full),
-      addCompilerPlugin("com.olegpy"   %% "better-monadic-for" % "0.3.1"),
       useAggressiveScalacOptions := true,
-      libraryDependencies ++= libs.hedgehog,
-      scalacOptions := (isDotty.value match {
-        case true  =>
-          Seq(
-            "-source:3.0-migration",
-            props.scala3cLanguageOptions,
-            "-Ykind-projector",
-          )
-        case false =>
-          scalacOptions.value
-      }),
+      libraryDependencies ++= libs.hedgehog(scalaVersion.value),
+      scalacOptions := (if (scalaVersion.value.startsWith("3.0")) {
+                          Seq(
+                            "-source:3.0-migration",
+                            props.scala3cLanguageOptions,
+                            "-Ykind-projector",
+                          )
+                        } else {
+                          scalacOptions.value
+                        }),
       Compile / doc / scalacOptions := ((Compile / doc / scalacOptions)
         .value
         .filterNot(
-          if (isDotty.value) {
+          if (scalaVersion.value.startsWith("3.0")) {
             Set(
               "-source:3.0-migration",
               "-scalajs",
