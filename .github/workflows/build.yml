@@ -13,12 +13,10 @@ jobs:
     strategy:
       matrix:
         scala:
-          - { name: 'Scala 2', version: "2.11.12",   binary-version: "2.11",      java-version: "adopt@1.11" }
-          - { name: 'Scala 2', version: "2.12.13",   binary-version: "2.12",      java-version: "adopt@1.11" }
-          - { name: 'Scala 2', version: "2.13.5",    binary-version: "2.13",      java-version: "adopt@1.11" }
-          - { name: 'Scala 3', version: "3.0.0-RC1", binary-version: "3.0.0-RC1", java-version: "adopt@1.11" }
-          - { name: 'Scala 3', version: "3.0.0-RC2", binary-version: "3.0.0-RC2", java-version: "adopt@1.11" }
-          - { name: 'Scala 3', version: "3.0.0-RC3", binary-version: "3.0.0-RC3", java-version: "adopt@1.11" }
+          - { name: 'Scala 2', version: "2.11.12", binary-version: "2.11", java-version: "adopt@1.11" }
+          - { name: 'Scala 2', version: "2.12.13", binary-version: "2.12", java-version: "adopt@1.11" }
+          - { name: 'Scala 2', version: "2.13.5",  binary-version: "2.13", java-version: "adopt@1.11" }
+          - { name: 'Scala 3', version: "3.0.0",   binary-version: "3",    java-version: "adopt@1.11" }
 
     steps:
       - uses: actions/checkout@v2.3.4
@@ -37,7 +35,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-sbt-${{ matrix.scala.binary-version }}
 
-      - name: "[Push] Build All for ${{ matrix.scala.name }} ${{ matrix.scala.version }} - ${{ github.run_number }}"
+      - name: "[Push] Build All for ${{ matrix.scala.name }}: ${{ matrix.scala.version }} - ${{ github.run_number }}"
         if: github.event_name == 'push'
         env:
           CURRENT_BRANCH_NAME: ${{ github.ref }}
@@ -53,7 +51,7 @@ jobs:
           java -version
           .github/workflows/sbt-build-all.sh ${{ matrix.scala.version }}
 
-      - name: "[PR] Build All for ${{ matrix.scala.name }} ${{ matrix.scala.version }} - PR-#${{ github.event.pull_request.number }} - ${{ github.run_number }}"
+      - name: "[PR] Build All for ${{ matrix.scala.name }}: ${{ matrix.scala.version }} - PR-#${{ github.event.pull_request.number }} - ${{ github.run_number }}"
         if: github.event_name == 'pull_request'
         env:
           CURRENT_BRANCH_NAME: ${{ github.base_ref }}

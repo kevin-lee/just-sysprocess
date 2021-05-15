@@ -57,8 +57,8 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
 
 lazy val props =
   new {
-    val DottyVersion        = "3.0.0-RC3"
-    val ProjectScalaVersion = DottyVersion
+    final val DottyVersion        = "3.0.0"
+    final val ProjectScalaVersion = DottyVersion
 
     val removeDottyIncompatible: ModuleID => Boolean =
       m =>
@@ -68,17 +68,15 @@ lazy val props =
           m.name == "better-monadic-for" ||
           m.name == "mdoc"
 
-    val CrossScalaVersions: Seq[String] =
-      Seq(
+    final val CrossScalaVersions =
+      List(
         "2.11.12",
         "2.12.13",
         "2.13.5",
-        "3.0.0-RC1",
-        "3.0.0-RC2",
         ProjectScalaVersion,
       ).distinct
 
-    lazy val scala3cLanguageOptions =
+    final val scala3cLanguageOptions =
       "-language:" + List(
         "dynamics",
         "existentials",
@@ -88,31 +86,22 @@ lazy val props =
         "implicitConversions",
       ).mkString(",")
 
-    val IncludeTest: String = "compile->compile;test->test"
+    final val IncludeTest = "compile->compile;test->test"
 
-    val hedgehogVersion       = "0.6.6"
-    val hedgehogLatestVersion = "0.6.7"
+    final val hedgehogVersion = "0.7.0"
 
-    val GitHubUsername = "Kevin-Lee"
-    val TheProjectName = "just-sysprocess"
+    final val GitHubUsername = "Kevin-Lee"
+    final val TheProjectName = "just-sysprocess"
   }
 
 lazy val libs =
   new {
 
-    def hedgehog(scalaVersion: String): List[ModuleID] = {
-      val hedgehogV =
-        if (scalaVersion == "3.0.0-RC1")
-          props.hedgehogVersion
-        else
-          props.hedgehogLatestVersion
-
-      List(
-        "qa.hedgehog" %% "hedgehog-core"   % hedgehogV % Test,
-        "qa.hedgehog" %% "hedgehog-runner" % hedgehogV % Test,
-        "qa.hedgehog" %% "hedgehog-sbt"    % hedgehogV % Test,
-      )
-    }
+    lazy val hedgehog: List[ModuleID] = List(
+      "qa.hedgehog" %% "hedgehog-core"   % props.hedgehogVersion % Test,
+      "qa.hedgehog" %% "hedgehog-runner" % props.hedgehogVersion % Test,
+      "qa.hedgehog" %% "hedgehog-sbt"    % props.hedgehogVersion % Test,
+    )
 
   }
 
@@ -126,7 +115,7 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
     .settings(
       name := prefixedProjectName(projectName.projectName),
       useAggressiveScalacOptions := true,
-      libraryDependencies ++= libs.hedgehog(scalaVersion.value),
+      libraryDependencies ++= libs.hedgehog,
       scalacOptions := (if (scalaVersion.value.startsWith("3.0")) {
                           Seq(
                             "-source:3.0-migration",
