@@ -10,7 +10,7 @@ Just SysProcess
 
 
 ```scala
-libraryDependencies += "io.kevinlee" %% "just-sysprocess" % "0.7.0"
+libraryDependencies += "io.kevinlee" %% "just-sysprocess" % "0.8.0"
 ```
 
 ## Example
