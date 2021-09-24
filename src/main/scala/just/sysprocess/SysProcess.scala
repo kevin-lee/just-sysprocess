@@ -23,7 +23,8 @@ object SysProcess {
   def singleSysProcess(baseDir: Option[File], command: String, commands: String*): SysProcess =
     SingleSysProcess(baseDir, command, commands.toList)
 
-  def run(sysProcess: SysProcess): ProcessResult =
+  @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
+  def run(sysProcess: SysProcess): Either[ProcessError, ProcessResult] =
     try (sysProcess match {
       case SingleSysProcess(baseDir, command, commands) =>
         val resultCollector = ResultCollector()
@@ -33,12 +34,28 @@ object SysProcess {
           )(dir => sys.process.Process(command :: commands, cwd = dir))
 
         val code = processBuilder ! resultCollector
-        ProcessResult.processResult(code, resultCollector)
+        processResult(code, resultCollector)
     })
     catch {
       case NonFatal(nonFatalThrowable) =>
-        ProcessResult.failureWithNonFatal(nonFatalThrowable)
+        Left(ProcessError.failureWithNonFatal(nonFatalThrowable))
     }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.Nothing"))
+  def processResult(code: Int, resultCollector: ResultCollector): Either[ProcessError, ProcessResult] =
+    if (code == 0) {
+      /* Why concatenate outputs and errors in success?
+       * Sometimes 'errors' has some part of success result. :(
+       */
+      Right(ProcessResult(resultCollector.outputs ++ resultCollector.errors))
+    } else {
+      Left(ProcessError.failure(code, resultCollector.errors))
+    }
+
+  implicit final class SysProcessOps(private val sysProcess: SysProcess) extends AnyVal {
+    def run(): Either[ProcessError, ProcessResult] =
+      SysProcess.run(sysProcess)
+  }
 
 }
 
@@ -76,48 +93,20 @@ object ResultCollector {
     Option((resultCollector.outputs, resultCollector.errors))
 }
 
-sealed trait ProcessResult
+final case class ProcessResult(outputs: List[String])
 
-object ProcessResult {
+sealed trait ProcessError
 
-  final case class Success(outputs: List[String]) extends ProcessResult
+object ProcessError {
 
-  final case class Failure(code: Int, errors: List[String]) extends ProcessResult
+  final case class Failure(code: Int, errors: List[String]) extends ProcessError
 
-  final case class FailureWithNonFatal(throwable: Throwable) extends ProcessResult
+  final case class FailureWithNonFatal(throwable: Throwable) extends ProcessError
 
-  def success(outputs: List[String]): ProcessResult =
-    Success(outputs)
-
-  def failure(code: Int, errors: List[String]): ProcessResult =
+  def failure(code: Int, errors: List[String]): ProcessError =
     Failure(code, errors)
 
-  def failureWithNonFatal(throwable: Throwable): ProcessResult =
+  def failureWithNonFatal(throwable: Throwable): ProcessError =
     FailureWithNonFatal(throwable)
-
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  def processResult(code: Int, resultCollector: ResultCollector): ProcessResult =
-    if (code == 0) {
-      /* Why concatenate outputs and errors in success?
-       * Sometimes 'errors' has some part of success result. :(
-       */
-      success(resultCollector.outputs ++ resultCollector.errors)
-    } else {
-      failure(code, resultCollector.errors)
-    }
-
-  def toEither[A, B](
-    processResult: ProcessResult
-  )(
-    resultToEither: ProcessResult => Either[A, B]
-  ): Either[A, B] =
-    resultToEither(processResult)
-
-  def toOption[A](
-    processResult: ProcessResult
-  )(
-    resultToOption: ProcessResult => Option[A]
-  ): Option[A] =
-    resultToOption(processResult)
 
 }
