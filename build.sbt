@@ -51,6 +51,7 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
                             } else {
                               libraryDependencies.value
                             }),
+    useAggressiveScalacOptions := true,
     console / initialCommands :=
       """import just.sysprocess._""",
   )
@@ -76,22 +77,14 @@ lazy val props =
         ProjectScalaVersion,
       ).distinct
 
-    final val scala3cLanguageOptions =
-      "-language:" + List(
-        "dynamics",
-        "existentials",
-        "higherKinds",
-        "reflectiveCalls",
-        "experimental.macros",
-        "implicitConversions",
-      ).mkString(",")
-
     final val IncludeTest = "compile->compile;test->test"
 
     final val hedgehogVersion = "0.7.0"
 
-    final val GitHubUsername = "Kevin-Lee"
-    final val TheProjectName = "just-sysprocess"
+    private val gitHubRepo = findRepoOrgAndName
+
+    val GitHubUsername = gitHubRepo.fold("Kevin-Lee")(_.orgToString)
+    val TheProjectName = gitHubRepo.fold("just-sysprocess")(_.nameToString)
   }
 
 lazy val libs =
@@ -116,38 +109,6 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       name := prefixedProjectName(projectName.projectName),
       useAggressiveScalacOptions := true,
       libraryDependencies ++= libs.hedgehog,
-      scalacOptions := (if (scalaVersion.value.startsWith("3.0")) {
-                          Seq(
-                            "-source:3.0-migration",
-                            props.scala3cLanguageOptions,
-                            "-Ykind-projector",
-                          )
-                        } else {
-                          scalacOptions.value
-                        }),
-      Compile / doc / scalacOptions := ((Compile / doc / scalacOptions)
-        .value
-        .filterNot(
-          if (scalaVersion.value.startsWith("3.0")) {
-            Set(
-              "-source:3.0-migration",
-              "-scalajs",
-              "-deprecation",
-              "-explain-types",
-              "-explain",
-              "-feature",
-              props.scala3cLanguageOptions,
-              "-unchecked",
-              "-Xfatal-warnings",
-              "-Ykind-projector",
-              "-from-tasty",
-              "-encoding",
-              "utf8",
-            )
-          } else {
-            Set.empty[String]
-          }
-        )),
       /* WartRemover and scalacOptions { */
 //      (Compile, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
 //      (Test, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
@@ -171,19 +132,17 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       libraryDependencies ++=
         (scalaBinaryVersion.value match {
           case "2.13" =>
-            Seq("com.lihaoyi" % "ammonite" % "2.3.8-58-aa8b2ab1" % Test cross CrossVersion.full)
+            List("com.lihaoyi" % "ammonite" % "2.4.0-23-76673f7f" % Test cross CrossVersion.full)
           case "2.12" =>
-            Seq("com.lihaoyi" % "ammonite" % "2.3.8-58-aa8b2ab1" % Test cross CrossVersion.full)
+            List("com.lihaoyi" % "ammonite" % "2.4.0-23-76673f7f" % Test cross CrossVersion.full)
           case "2.11" =>
-            Seq("com.lihaoyi" % "ammonite" % "1.6.7" % Test cross CrossVersion.full)
+            List("com.lihaoyi" % "ammonite" % "1.6.7" % Test cross CrossVersion.full)
           case _      =>
-            Seq.empty[ModuleID]
+            List.empty[ModuleID]
         }),
       Test / sourceGenerators +=
         (scalaBinaryVersion.value match {
-          case "2.13"          =>
-            task(Seq.empty[File])
-          case "2.11" | "2.12" =>
+          case "2.13" | "2.11" | "2.12" =>
             task {
               val file = (Test / sourceManaged).value / "amm.scala"
               IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
