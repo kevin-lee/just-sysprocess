@@ -10,38 +10,19 @@ import scala.util.control.NonFatal
   * @author Kevin Lee
   * @since 2019-01-01
   */
-sealed trait SysProcess
-
-object SysProcess {
-
-  final case class SingleSysProcess(
+enum SysProcess derives CanEqual {
+  case SingleSysProcess(
     baseDir: Option[File],
     command: String,
     commands: List[String]
-  ) extends SysProcess
+  )
+}
+
+object SysProcess {
 
   def singleSysProcess(baseDir: Option[File], command: String, commands: String*): SysProcess =
-    SingleSysProcess(baseDir, command, commands.toList)
+    SysProcess.SingleSysProcess(baseDir, command, commands.toList)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
-  def run(sysProcess: SysProcess): Either[ProcessError, ProcessResult] =
-    try (sysProcess match {
-      case SingleSysProcess(baseDir, command, commands) =>
-        val resultCollector = ResultCollector()
-        val processBuilder  =
-          baseDir.fold(
-            sys.process.Process(command :: commands)
-          )(dir => sys.process.Process(command :: commands, cwd = dir))
-
-        val code = processBuilder ! resultCollector
-        processResult(code, resultCollector)
-    })
-    catch {
-      case NonFatal(nonFatalThrowable) =>
-        Left(ProcessError.failureWithNonFatal(nonFatalThrowable))
-    }
-
-  @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.Nothing"))
   def processResult(code: Int, resultCollector: ResultCollector): Either[ProcessError, ProcessResult] =
     if (code == 0) {
       /* Why concatenate outputs and errors in success?
@@ -52,9 +33,25 @@ object SysProcess {
       Left(ProcessError.failure(code, resultCollector.errors))
     }
 
-  implicit final class SysProcessOps(private val sysProcess: SysProcess) extends AnyVal {
+  extension (sysProcess: SysProcess) {
+
     def run(): Either[ProcessError, ProcessResult] =
-      SysProcess.run(sysProcess)
+      try (sysProcess match {
+        case SingleSysProcess(baseDir, command, commands) =>
+          val resultCollector = ResultCollector()
+          val processBuilder  =
+            baseDir.fold(
+              sys.process.Process(command :: commands)
+            )(dir => sys.process.Process(command :: commands, cwd = dir))
+
+          val code = processBuilder ! resultCollector
+          processResult(code, resultCollector)
+      })
+      catch {
+        case NonFatal(nonFatalThrowable) =>
+          Left(ProcessError.failureWithNonFatal(nonFatalThrowable))
+      }
+
   }
 
 }
@@ -62,18 +59,16 @@ object SysProcess {
 final class ResultCollector private (
   private val outs: ListBuffer[String],
   private val errs: ListBuffer[String]
-) extends ProcessLogger {
+) extends ProcessLogger derives CanEqual {
 
   def outputs: List[String] = outs.result()
   def errors: List[String]  = errs.result()
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   override def out(s: => String): Unit = {
     outs += s
     ()
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   override def err(s: => String): Unit = {
     errs += s
     ()
@@ -86,27 +81,25 @@ final class ResultCollector private (
 }
 
 object ResultCollector {
-  @SuppressWarnings(Array("org.wartremover.warts.MutableDataStructures"))
   def apply(): ResultCollector = new ResultCollector(ListBuffer(), ListBuffer())
 
   def unapply(resultCollector: ResultCollector): Option[(List[String], List[String])] =
     Option((resultCollector.outputs, resultCollector.errors))
 }
 
-final case class ProcessResult(outputs: List[String])
+final case class ProcessResult(outputs: List[String]) derives CanEqual
 
-sealed trait ProcessError
+enum ProcessError derives CanEqual {
+  case Failure(code: Int, errors: List[String])
+  case FailureWithNonFatal(throwable: Throwable)
+}
 
 object ProcessError {
 
-  final case class Failure(code: Int, errors: List[String]) extends ProcessError
-
-  final case class FailureWithNonFatal(throwable: Throwable) extends ProcessError
-
   def failure(code: Int, errors: List[String]): ProcessError =
-    Failure(code, errors)
+    ProcessError.Failure(code, errors)
 
   def failureWithNonFatal(throwable: Throwable): ProcessError =
-    FailureWithNonFatal(throwable)
+    ProcessError.FailureWithNonFatal(throwable)
 
 }
