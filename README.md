@@ -16,14 +16,13 @@ libraryDependencies += "io.kevinlee" %% "just-sysprocess" % "1.0.0"
 ## Example
 
 ### Scala 2.11 ~ 2.13
-Run on Scastie: https://scastie.scala-lang.org/JvBBO4WgR3y8WN5Cd1EXMQ
+Run on Scastie: https://scastie.scala-lang.org/qb8MfQbxTCql9ZhTR1POCw
 ```scala
 import just.sysprocess._
 
 val sysProcess = SysProcess.singleSysProcess(None, "ls")
 
 val result: Either[ProcessError, ProcessResult] = sysProcess.run()
-
 result match {
   case Right(ProcessResult(result)) =>
     println(result.mkString("Files: \n  -", "\n  -", "\n"))
@@ -37,15 +36,15 @@ result match {
 ```
 
 ### Scala 3 (Dotty) 
-Run on Scastie: https://scastie.scala-lang.org/4Nh0xTT5THKpz91F3dcy2w
+Run on Scastie: https://scastie.scala-lang.org/fe7qYl9uTkSOX9VpyHZzHw
 
 ```scala
 import just.sysprocess._
 
-@main def main: Unit = {
+@main def runApp: Unit = {
   val sysProcess = SysProcess.singleSysProcess(None, "ls")
 
-  val result: Either[String, List[String]] = sysProcess.run()
+  val result: Either[ProcessError, ProcessResult] = sysProcess.run()
   result match {
     case Right(ProcessResult(result)) =>
       println(result.mkString("Files: \n  -", "\n  -", "\n"))
