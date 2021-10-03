@@ -10,7 +10,7 @@ Just SysProcess
 
 
 ```scala
-libraryDependencies += "io.kevinlee" %% "just-sysprocess" % "0.8.0"
+libraryDependencies += "io.kevinlee" %% "just-sysprocess" % "1.0.0"
 ```
 
 ## Example
@@ -22,24 +22,17 @@ import just.sysprocess._
 
 val sysProcess = SysProcess.singleSysProcess(None, "ls")
 
-val result: Either[String, List[String]] = ProcessResult.toEither(
-  SysProcess.run(sysProcess)
-) {
-    case ProcessResult.Success(result) =>
-      Right(result)
+val result: Either[ProcessError, ProcessResult] = sysProcess.run()
 
-    case ProcessResult.Failure(code, error) =>
-      Left(s"Failed: code: $code, ${error.mkString("\n")}")
-
-    case ProcessResult.FailureWithNonFatal(nonFatalThrowable) =>
-      Left(nonFatalThrowable.getMessage)
-}
 result match {
-  case Right(files) =>
-    println(files.mkString("Files: \n  -", "\n  -", "\n"))
-
-  case Left(error) =>
-    println(s"ERROR: ${error.toString}")
+  case Right(ProcessResult(result)) =>
+    println(result.mkString("Files: \n  -", "\n  -", "\n"))
+  
+  case Left(ProcessError.Failure(code, error)) =>
+    println(s"[ERROR] Failed: code: $code, ${error.mkString("\n")}")
+  
+  case Left(ProcessError.FailureWithNonFatal(nonFatalThrowable)) =>
+    println(s"[ERROR] ${nonFatalThrowable.getMessage}")
 }
 ```
 
@@ -52,24 +45,14 @@ import just.sysprocess._
 @main def main: Unit = {
   val sysProcess = SysProcess.singleSysProcess(None, "ls")
 
-  val result: Either[String, List[String]] = ProcessResult.toEither(
-    SysProcess.run(sysProcess)
-  ) {
-      case ProcessResult.Success(result) =>
-        Right(result)
-
-      case ProcessResult.Failure(code, error) =>
-        Left(s"Failed: code: $code, ${error.mkString("\n")}")
-
-      case ProcessResult.FailureWithNonFatal(nonFatalThrowable) =>
-        Left(nonFatalThrowable.getMessage)
-  }
+  val result: Either[String, List[String]] = sysProcess.run()
   result match {
-    case Right(files) =>
-      println(files.mkString("Files: \n  -", "\n  -", "\n"))
-    
-    case Left(error) =>
-      println(s"ERROR: ${error.toString}")
+    case Right(ProcessResult(result)) =>
+      println(result.mkString("Files: \n  -", "\n  -", "\n"))
+    case Left(ProcessError.Failure(code, error)) =>
+      println(s"[ERROR] Failed: code: $code, ${error.mkString("\n")}")
+    case Left(ProcessError.FailureWithNonFatal(nonFatalThrowable)) =>
+      println(s"[ERROR] ${nonFatalThrowable.getMessage}")
   }
 }
 ```
