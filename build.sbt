@@ -79,7 +79,7 @@ lazy val props =
 
     final val IncludeTest = "compile->compile;test->test"
 
-    final val hedgehogVersion = "0.7.0"
+    final val hedgehogVersion = "0.8.0"
 
     private val gitHubRepo = findRepoOrgAndName
 
