@@ -23,6 +23,8 @@ ThisBuild / scmInfo := ScmInfo(
 ).some
 ThisBuild / licenses := List("MIT" -> url("http://opensource.org/licenses/MIT"))
 
+ThisBuild / resolvers += "sonatype-snapshots" at s"https://${props.SonatypeCredentialHost}/content/repositories/snapshots"
+
 lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""), file("."))
   .enablePlugins(DevOopsGitHubReleasePlugin)
   .settings(
@@ -55,11 +57,15 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
     console / initialCommands :=
       """import just.sysprocess._""",
   )
+  .settings(mavenCentralPublishSettings)
 
 lazy val props =
   new {
     final val DottyVersion        = "3.0.0"
     final val ProjectScalaVersion = DottyVersion
+
+    val SonatypeCredentialHost = "s01.oss.sonatype.org"
+    val SonatypeRepository     = s"https://$SonatypeCredentialHost/service/local"
 
     val removeDottyIncompatible: ModuleID => Boolean =
       m =>
@@ -97,6 +103,13 @@ lazy val libs =
     )
 
   }
+
+lazy val mavenCentralPublishSettings: SettingsDefinition = List(
+  /* Publish to Maven Central { */
+  sonatypeCredentialHost := props.SonatypeCredentialHost,
+  sonatypeRepository     := props.SonatypeRepository,
+  /* } Publish to Maven Central */
+)
 
 def prefixedProjectName(name: String) = s"${props.TheProjectName}${if (name.isEmpty)
   ""
@@ -154,3 +167,4 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       /* } Ammonite-REPL */
       licenses := List("MIT" -> url("http://opensource.org/licenses/MIT")),
     )
+    .settings(mavenCentralPublishSettings)
