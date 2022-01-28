@@ -46,7 +46,7 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
         case x =>
           libraryDependencies.value
       },
-    libraryDependencies        := (if (scalaVersion.value.startsWith("3.0")) {
+    libraryDependencies        := (if (scalaVersion.value.startsWith("3.")) {
                               libraryDependencies
                                 .value
                                 .filterNot(props.removeDottyIncompatible)
