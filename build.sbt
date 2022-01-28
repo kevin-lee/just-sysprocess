@@ -3,9 +3,9 @@ import kevinlee.sbt.SbtCommon.crossVersionProps
 import just.semver.SemVer
 import SemVer.{Major, Minor}
 
-ThisBuild / scalaVersion := props.ProjectScalaVersion
-ThisBuild / organization := "io.kevinlee"
-ThisBuild / organizationName := "Kevin's Code"
+ThisBuild / scalaVersion       := props.ProjectScalaVersion
+ThisBuild / organization       := "io.kevinlee"
+ThisBuild / organizationName   := "Kevin's Code"
 ThisBuild / crossScalaVersions := props.CrossScalaVersions
 
 ThisBuild / developers := List(
@@ -16,19 +16,19 @@ ThisBuild / developers := List(
     url(s"https://github.com/${props.GitHubUsername}"),
   )
 )
-ThisBuild / homepage := url(s"https://github.com/${props.GitHubUsername}/${props.TheProjectName}").some
-ThisBuild / scmInfo := ScmInfo(
+ThisBuild / homepage   := url(s"https://github.com/${props.GitHubUsername}/${props.TheProjectName}").some
+ThisBuild / scmInfo    := ScmInfo(
   url(s"https://github.com/${props.GitHubUsername}/${props.TheProjectName}"),
   s"git@github.com:${props.GitHubUsername}/${props.TheProjectName}.git",
 ).some
-ThisBuild / licenses := List("MIT" -> url("http://opensource.org/licenses/MIT"))
+ThisBuild / licenses   := List("MIT" -> url("http://opensource.org/licenses/MIT"))
 
 ThisBuild / resolvers += "sonatype-snapshots" at s"https://${props.SonatypeCredentialHost}/content/repositories/snapshots"
 
 lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""), file("."))
   .enablePlugins(DevOopsGitHubReleasePlugin)
   .settings(
-    description := "Sys Process Util",
+    description                := "Sys Process Util",
     Compile / unmanagedSourceDirectories ++= {
       val sharedSourceDir = baseDirectory.value / "src/main"
       if (scalaVersion.value.startsWith("2.13") || scalaVersion.value.startsWith("2.12"))
@@ -36,17 +36,17 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
       else
         Seq.empty
     },
-    libraryDependencies :=
+    libraryDependencies        :=
       crossVersionProps(
         List.empty,
         SemVer.parseUnsafe(scalaVersion.value),
       ) {
         case (Major(2), Minor(10), _) =>
           libraryDependencies.value.filterNot(m => m.organization == "org.wartremover" && m.name == "wartremover")
-        case x                        =>
+        case x =>
           libraryDependencies.value
       },
-    libraryDependencies := (if (scalaVersion.value.startsWith("3.0")) {
+    libraryDependencies        := (if (scalaVersion.value.startsWith("3.0")) {
                               libraryDependencies
                                 .value
                                 .filterNot(props.removeDottyIncompatible)
@@ -54,7 +54,7 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
                               libraryDependencies.value
                             }),
     useAggressiveScalacOptions := true,
-    console / initialCommands :=
+    console / initialCommands  :=
       """import just.sysprocess._""",
   )
   .settings(mavenCentralPublishSettings)
@@ -119,23 +119,23 @@ else
 def projectCommonSettings(id: String, projectName: ProjectName, file: File): Project =
   Project(id, file)
     .settings(
-      name := prefixedProjectName(projectName.projectName),
-      useAggressiveScalacOptions := true,
+      name                                    := prefixedProjectName(projectName.projectName),
+      useAggressiveScalacOptions              := true,
       libraryDependencies ++= libs.hedgehog,
       /* WartRemover and scalacOptions { */
 //      (Compile, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
 //      (Test, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
       wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
 //      wartremoverErrors ++= Warts.all,
-      Compile / console / wartremoverErrors := List.empty,
+      Compile / console / wartremoverErrors   := List.empty,
       Compile / console / wartremoverWarnings := List.empty,
-      Compile / console / scalacOptions :=
+      Compile / console / scalacOptions       :=
         (console / scalacOptions)
           .value
           .filterNot(option => option.contains("wartremover") || option.contains("import")),
-      Test / console / wartremoverErrors := List.empty,
-      Test / console / wartremoverWarnings := List.empty,
-      Test / console / scalacOptions :=
+      Test / console / wartremoverErrors      := List.empty,
+      Test / console / wartremoverWarnings    := List.empty,
+      Test / console / scalacOptions          :=
         (console / scalacOptions)
           .value
           .filterNot(option => option.contains("wartremover") || option.contains("import")),
@@ -150,7 +150,7 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
             List("com.lihaoyi" % "ammonite" % "2.4.0-23-76673f7f" % Test cross CrossVersion.full)
           case "2.11" =>
             List("com.lihaoyi" % "ammonite" % "1.6.7" % Test cross CrossVersion.full)
-          case _      =>
+          case _ =>
             List.empty[ModuleID]
         }),
       Test / sourceGenerators +=
@@ -161,10 +161,10 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
               IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
               Seq(file)
             }
-          case _               =>
+          case _ =>
             task(Seq.empty[File])
         }),
       /* } Ammonite-REPL */
-      licenses := List("MIT" -> url("http://opensource.org/licenses/MIT")),
+      licenses                                := List("MIT" -> url("http://opensource.org/licenses/MIT")),
     )
     .settings(mavenCentralPublishSettings)

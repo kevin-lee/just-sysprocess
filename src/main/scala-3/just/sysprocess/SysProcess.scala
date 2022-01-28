@@ -36,18 +36,19 @@ object SysProcess {
   extension (sysProcess: SysProcess) {
 
     def run(): Either[ProcessError, ProcessResult] =
-      try (sysProcess match {
-        case SingleSysProcess(baseDir, command, commands) =>
-          val resultCollector = ResultCollector()
-          val processBuilder  =
-            baseDir.fold(
-              sys.process.Process(command :: commands)
-            )(dir => sys.process.Process(command :: commands, cwd = dir))
+      try {
+        sysProcess match {
+          case SingleSysProcess(baseDir, command, commands) =>
+            val resultCollector = ResultCollector()
+            val processBuilder  =
+              baseDir.fold(
+                sys.process.Process(command :: commands)
+              )(dir => sys.process.Process(command :: commands, cwd = dir))
 
-          val code = processBuilder ! resultCollector
-          processResult(code, resultCollector)
-      })
-      catch {
+            val code = processBuilder ! resultCollector
+            processResult(code, resultCollector)
+        }
+      } catch {
         case NonFatal(nonFatalThrowable) =>
           Left(ProcessError.failureWithNonFatal(nonFatalThrowable))
       }
@@ -59,7 +60,8 @@ object SysProcess {
 final class ResultCollector private (
   private val outs: ListBuffer[String],
   private val errs: ListBuffer[String]
-) extends ProcessLogger derives CanEqual {
+) extends ProcessLogger
+    derives CanEqual {
 
   def outputs: List[String] = outs.result()
   def errors: List[String]  = errs.result()
