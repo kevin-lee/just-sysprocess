@@ -16,7 +16,7 @@ libraryDependencies += "io.kevinlee" %% "just-sysprocess" % "1.0.0"
 ## Example
 
 ### Scala 2.11 ~ 2.13
-Run on Scastie: https://scastie.scala-lang.org/qb8MfQbxTCql9ZhTR1POCw
+Run on Scastie: https://scastie.scala-lang.org/Kevin-Lee/1Gvwl8I3S4epu5NnoMSjdw
 ```scala
 import just.sysprocess._
 
@@ -36,10 +36,10 @@ result match {
 ```
 
 ### Scala 3 (Dotty) 
-Run on Scastie: https://scastie.scala-lang.org/fe7qYl9uTkSOX9VpyHZzHw
+Run on Scastie: https://scastie.scala-lang.org/Kevin-Lee/j6jWfzr7QtqmUAyPr4TY5w
 
 ```scala
-import just.sysprocess._
+import just.sysprocess.*
 
 @main def runApp: Unit = {
   val sysProcess = SysProcess.singleSysProcess(None, "ls")
@@ -48,8 +48,10 @@ import just.sysprocess._
   result match {
     case Right(ProcessResult(result)) =>
       println(result.mkString("Files: \n  -", "\n  -", "\n"))
+
     case Left(ProcessError.Failure(code, error)) =>
       println(s"[ERROR] Failed: code: $code, ${error.mkString("\n")}")
+
     case Left(ProcessError.FailureWithNonFatal(nonFatalThrowable)) =>
       println(s"[ERROR] ${nonFatalThrowable.getMessage}")
   }
