@@ -60,7 +60,7 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
 
 lazy val props =
   new {
-    final val DottyVersion        = "3.0.0"
+    final val DottyVersion        = "3.0.2"
     final val ProjectScalaVersion = DottyVersion
 
     val SonatypeCredentialHost = "s01.oss.sonatype.org"
@@ -84,7 +84,7 @@ lazy val props =
 
     final val IncludeTest = "compile->compile;test->test"
 
-    final val hedgehogVersion = "0.8.0"
+    final val hedgehogVersion = "0.9.0"
 
     private val gitHubRepo = findRepoOrgAndName
 
