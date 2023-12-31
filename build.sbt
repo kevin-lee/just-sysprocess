@@ -53,7 +53,6 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
                             } else {
                               libraryDependencies.value
                             }),
-    useAggressiveScalacOptions := true,
     console / initialCommands  :=
       """import just.sysprocess._""",
   )
@@ -120,7 +119,6 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
   Project(id, file)
     .settings(
       name                                    := prefixedProjectName(projectName.projectName),
-      useAggressiveScalacOptions              := true,
       libraryDependencies ++= libs.hedgehog,
       /* WartRemover and scalacOptions { */
 //      (Compile, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
