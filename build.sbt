@@ -28,7 +28,7 @@ ThisBuild / resolvers += "sonatype-snapshots" at s"https://${props.SonatypeCrede
 lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""), file("."))
   .enablePlugins(DevOopsGitHubReleasePlugin)
   .settings(
-    description                := "Sys Process Util",
+    description               := "Sys Process Util",
     Compile / unmanagedSourceDirectories ++= {
       val sharedSourceDir = baseDirectory.value / "src/main"
       if (scalaVersion.value.startsWith("2.13") || scalaVersion.value.startsWith("2.12"))
@@ -36,7 +36,7 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
       else
         Seq.empty
     },
-    libraryDependencies        :=
+    libraryDependencies       :=
       crossVersionProps(
         List.empty,
         SemVer.parseUnsafe(scalaVersion.value),
@@ -46,22 +46,22 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
         case x =>
           libraryDependencies.value
       },
-    libraryDependencies        := (if (scalaVersion.value.startsWith("3.")) {
+    libraryDependencies       := (if (scalaVersion.value.startsWith("3.")) {
                               libraryDependencies
                                 .value
                                 .filterNot(props.removeDottyIncompatible)
                             } else {
                               libraryDependencies.value
                             }),
-    console / initialCommands  :=
+    console / initialCommands :=
       """import just.sysprocess._""",
   )
   .settings(mavenCentralPublishSettings)
 
 lazy val props =
   new {
-    final val DottyVersion        = "3.0.2"
-    final val ProjectScalaVersion = DottyVersion
+    val DottyVersion        = "3.0.2"
+    val ProjectScalaVersion = DottyVersion
 
     val SonatypeCredentialHost = "s01.oss.sonatype.org"
     val SonatypeRepository     = s"https://$SonatypeCredentialHost/service/local"
@@ -74,7 +74,7 @@ lazy val props =
           m.name == "better-monadic-for" ||
           m.name == "mdoc"
 
-    final val CrossScalaVersions =
+    val CrossScalaVersions =
       List(
         "2.11.12",
         "2.12.13",
@@ -82,9 +82,9 @@ lazy val props =
         ProjectScalaVersion,
       ).distinct
 
-    final val IncludeTest = "compile->compile;test->test"
+    val IncludeTest = "compile->compile;test->test"
 
-    final val hedgehogVersion = "0.9.0"
+    val hedgehogVersion = "0.9.0"
 
     private val gitHubRepo = findRepoOrgAndName
 
@@ -110,10 +110,7 @@ lazy val mavenCentralPublishSettings: SettingsDefinition = List(
   /* } Publish to Maven Central */
 )
 
-def prefixedProjectName(name: String) = s"${props.TheProjectName}${if (name.isEmpty)
-  ""
-else
-  s"-$name"}"
+def prefixedProjectName(name: String) = s"${props.TheProjectName}${if (name.isEmpty) "" else s"-$name"}"
 
 def projectCommonSettings(id: String, projectName: ProjectName, file: File): Project =
   Project(id, file)
