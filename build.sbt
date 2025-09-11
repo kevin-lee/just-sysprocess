@@ -23,8 +23,6 @@ ThisBuild / scmInfo    := ScmInfo(
 ).some
 ThisBuild / licenses   := List("MIT" -> url("http://opensource.org/licenses/MIT"))
 
-ThisBuild / resolvers += "sonatype-snapshots" at s"https://${props.SonatypeCredentialHost}/content/repositories/snapshots"
-
 lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""), file("."))
   .enablePlugins(DevOopsGitHubReleasePlugin)
   .settings(
@@ -56,15 +54,11 @@ lazy val justSysprocess = projectCommonSettings("justSysprocess", ProjectName(""
     console / initialCommands :=
       """import just.sysprocess._""",
   )
-  .settings(mavenCentralPublishSettings)
 
 lazy val props =
   new {
-    val DottyVersion        = "3.0.2"
+    val DottyVersion        = "3.3.3"
     val ProjectScalaVersion = DottyVersion
-
-    val SonatypeCredentialHost = "s01.oss.sonatype.org"
-    val SonatypeRepository     = s"https://$SonatypeCredentialHost/service/local"
 
     val removeDottyIncompatible: ModuleID => Boolean =
       m =>
@@ -77,8 +71,8 @@ lazy val props =
     val CrossScalaVersions =
       List(
         "2.11.12",
-        "2.12.13",
-        "2.13.5",
+        "2.12.18",
+        "2.13.11",
         ProjectScalaVersion,
       ).distinct
 
@@ -102,13 +96,6 @@ lazy val libs =
     )
 
   }
-
-lazy val mavenCentralPublishSettings: SettingsDefinition = List(
-  /* Publish to Maven Central { */
-  sonatypeCredentialHost := props.SonatypeCredentialHost,
-  sonatypeRepository     := props.SonatypeRepository,
-  /* } Publish to Maven Central */
-)
 
 def prefixedProjectName(name: String) = s"${props.TheProjectName}${if (name.isEmpty) "" else s"-$name"}"
 
@@ -137,29 +124,28 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
       /* } WartRemover and scalacOptions */
       testFrameworks ++= Seq(TestFramework("hedgehog.sbt.Framework")),
       /* Ammonite-REPL { */
-      libraryDependencies ++=
-        (scalaBinaryVersion.value match {
-          case "2.13" =>
-            List("com.lihaoyi" % "ammonite" % "2.4.0-23-76673f7f" % Test cross CrossVersion.full)
-          case "2.12" =>
-            List("com.lihaoyi" % "ammonite" % "2.4.0-23-76673f7f" % Test cross CrossVersion.full)
-          case "2.11" =>
-            List("com.lihaoyi" % "ammonite" % "1.6.7" % Test cross CrossVersion.full)
-          case _ =>
-            List.empty[ModuleID]
-        }),
-      Test / sourceGenerators +=
-        (scalaBinaryVersion.value match {
-          case "2.13" | "2.11" | "2.12" =>
-            task {
-              val file = (Test / sourceManaged).value / "amm.scala"
-              IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
-              Seq(file)
-            }
-          case _ =>
-            task(Seq.empty[File])
-        }),
+//      libraryDependencies ++=
+//        (scalaBinaryVersion.value match {
+//          case "2.13" =>
+//            List("com.lihaoyi" % "ammonite" % "2.4.0-23-76673f7f" % Test cross CrossVersion.full)
+//          case "2.12" =>
+//            List("com.lihaoyi" % "ammonite" % "2.4.0-23-76673f7f" % Test cross CrossVersion.full)
+//          case "2.11" =>
+//            List("com.lihaoyi" % "ammonite" % "1.6.7" % Test cross CrossVersion.full)
+//          case _ =>
+//            List.empty[ModuleID]
+//        }),
+//      Test / sourceGenerators +=
+//        (scalaBinaryVersion.value match {
+//          case "2.13" | "2.11" | "2.12" =>
+//            task {
+//              val file = (Test / sourceManaged).value / "amm.scala"
+//              IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
+//              Seq(file)
+//            }
+//          case _ =>
+//            task(Seq.empty[File])
+//        }),
       /* } Ammonite-REPL */
       licenses                                := List("MIT" -> url("http://opensource.org/licenses/MIT")),
     )
-    .settings(mavenCentralPublishSettings)
