@@ -60,8 +60,7 @@ object SysProcess {
 final class ResultCollector private (
   private val outs: ListBuffer[String],
   private val errs: ListBuffer[String]
-) extends ProcessLogger
-    derives CanEqual {
+) extends ProcessLogger derives CanEqual {
 
   def outputs: List[String] = outs.result()
   def errors: List[String]  = errs.result()

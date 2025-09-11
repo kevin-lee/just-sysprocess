@@ -37,17 +37,18 @@ object SysProcess {
   implicit final class SysProcessOps(private val sysProcess: SysProcess) extends AnyVal {
     @SuppressWarnings(Array("org.wartremover.warts.Nothing"))
     def run(): Either[ProcessError, ProcessResult] =
-      try (sysProcess match {
-        case SingleSysProcess(baseDir, command, commands) =>
-          val resultCollector = ResultCollector()
-          val processBuilder  =
-            baseDir.fold(
-              sys.process.Process(command :: commands)
-            )(dir => sys.process.Process(command :: commands, cwd = dir))
+      try
+        (sysProcess match {
+          case SingleSysProcess(baseDir, command, commands) =>
+            val resultCollector = ResultCollector()
+            val processBuilder  =
+              baseDir.fold(
+                sys.process.Process(command :: commands)
+              )(dir => sys.process.Process(command :: commands, cwd = dir))
 
-          val code = processBuilder ! resultCollector
-          processResult(code, resultCollector)
-      })
+            val code = processBuilder ! resultCollector
+            processResult(code, resultCollector)
+        })
       catch {
         case NonFatal(nonFatalThrowable) =>
           Left(ProcessError.failureWithNonFatal(nonFatalThrowable))
