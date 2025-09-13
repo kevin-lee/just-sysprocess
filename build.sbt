@@ -78,7 +78,8 @@ lazy val props =
 
     val IncludeTest = "compile->compile;test->test"
 
-    val hedgehogVersion = "0.9.0"
+    val OldHedgehogVersion = "0.9.0"
+    val HedgehogVersion    = "0.13.0"
 
     private val gitHubRepo = findRepoOrgAndName
 
@@ -89,11 +90,18 @@ lazy val props =
 lazy val libs =
   new {
 
-    lazy val hedgehog: List[ModuleID] = List(
-      "qa.hedgehog" %% "hedgehog-core"   % props.hedgehogVersion % Test,
-      "qa.hedgehog" %% "hedgehog-runner" % props.hedgehogVersion % Test,
-      "qa.hedgehog" %% "hedgehog-sbt"    % props.hedgehogVersion % Test,
-    )
+    def hedgehog(scalaVersion: String): List[ModuleID] = {
+      val hedgehogVersion   = if (scalaVersion.startsWith("2.11")) {
+        props.OldHedgehogVersion
+      } else {
+        props.HedgehogVersion
+      }
+      List(
+        "qa.hedgehog" %% "hedgehog-core"   % hedgehogVersion % Test,
+        "qa.hedgehog" %% "hedgehog-runner" % hedgehogVersion % Test,
+        "qa.hedgehog" %% "hedgehog-sbt"    % hedgehogVersion % Test,
+      )
+    }
 
   }
 
@@ -103,7 +111,7 @@ def projectCommonSettings(id: String, projectName: ProjectName, file: File): Pro
   Project(id, file)
     .settings(
       name                                    := prefixedProjectName(projectName.projectName),
-      libraryDependencies ++= libs.hedgehog,
+      libraryDependencies ++= libs.hedgehog(scalaVersion.value),
       /* WartRemover and scalacOptions { */
 //      (Compile, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
 //      (Test, compile) / wartremoverErrors ++= commonWarts((update / scalaBinaryVersion).value),
